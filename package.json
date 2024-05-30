@@ -14,10 +14,17 @@
   "contributes": {
     "commands": [
       {
-        "command": "gcode-extension.helloWorld",
-        "title": "Hello World"
+        "command": "gcode-extension.editE",
+        "title": "Gcodeの値を変更する"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [{
+        "command": "gcode-extension.editE",
+        "when": "editorHasSelection",
+        "group": "gcode-extension-group"
+      }]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
