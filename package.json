@@ -9,13 +9,17 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": ["*"],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
         "command": "gcode-extension.editE",
         "title": "Gcodeの値を変更する"
+      },
+      {"command": "gcode-extension.check",
+      "title": "Gcodeの異常値を検出する"
+
       }
     ],
     "menus": {

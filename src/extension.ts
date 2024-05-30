@@ -1,7 +1,12 @@
 import * as vscode from "vscode";
 
 export function activate(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand(
+  const button = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left,0);
+  button.text = "Gcode Check";
+  button.command = "gcode-extension.check";
+  button.show();
+
+  let disposable1 = vscode.commands.registerCommand(
     "gcode-extension.editE",
     async () => {
       const editor = vscode.window.activeTextEditor;
@@ -25,7 +30,25 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
 
-  context.subscriptions.push(disposable);
+  let disposable2 = vscode.commands.registerCommand(
+    "gcode-extension.check",
+    async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (editor) {
+        const text = editor.document.getText();
+        const result = checkFunc(text);
+        if(result){
+          vscode.window.showErrorMessage(result);
+        }else{
+          vscode.window.showInformationMessage("errorはありませんでした!");
+        }
+      }
+    }
+  );
+
+  context.subscriptions.push(disposable1);
+  context.subscriptions.push(disposable2);
+  
 }
 
 export function deactivate() {}
@@ -39,14 +62,16 @@ type GcodeLine = {
   e?: number | undefined;
   line: string;
   lineArray: string[];
+  rowIndex: number;
 };
 
 function parseGcodeLines(text: string): GcodeLine[] {
   const lines = text.split("\n");
   const result: GcodeLine[] = [];
-  lines.forEach((line) => {
+  lines.forEach((line, idx) => {
     const fields = line.trim().split(" ");
     const object: GcodeLine = {
+      rowIndex: idx,
       line: line,
       lineArray: fields,
       command: fields?.[0],
@@ -101,4 +126,25 @@ function replaceLogic(selectedText: string, input: string): string {
     }
   });
   return result.join("\n");
+}
+
+function checkFunc(selectedText: string): string | false{
+  const gcodes = parseGcodeLines(selectedText).filter(gcode => gcode.commandType === "G" && gcode.e !== undefined).slice(2);
+  let lastE:number = 0;
+  const errors:string[] = [];
+  gcodes.forEach(gcode=>{
+    if(gcode.e === 0) {
+      return;
+    };
+    const sub = Math.floor(Math.abs(gcode.e as number -lastE));
+    if(sub>6.5){
+      errors.push(`line${gcode.rowIndex+1}: 差が${sub}です`);
+    }
+    lastE = gcode.e as number;
+  });
+
+  if(errors.length === 0){
+    return false;
+  }
+  return errors.join("\n");
 }
